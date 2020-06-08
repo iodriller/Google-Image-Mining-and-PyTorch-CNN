@@ -12,7 +12,7 @@ For google image mining, install:
 
 [chromedriver](http://chromedriver.storage.googleapis.com/index.html?path=2.9/)
 
-At the example jupyter notebooks, replace <PATH> with the directory you put the "chromedriver.exe":
+At the examples given in jupyter notebooks, you need to replace <PATH> with the directory that you placed the "chromedriver.exe":
 
 	DRIVER_PATH = r"<PATH>"
 
@@ -22,10 +22,10 @@ i.e.:
 
 ### Examples
 
-There are two jupyter notebooks that shows how to do image mining and running CNN:
+There are two jupyter notebooks that shows how to do image mining and run CNN:
 
 - __[example_1:](https://github.com/iodriller/Google-Image-Mining-and-PyTorch-CNN/blob/master/example_1.ipynb)__ - Mines google images based on a list of keywords, then runs PyTorch CNN and returns the network. Also, provides an accuracy metric.
-- __[example_2:](https://github.com/iodriller/Google-Image-Mining-and-PyTorch-CNN/blob/master/example_2.ipynb)__ - This is for google image search only. With just couple of lines, you can mine quite a bit images automatically.
+- __[example_2:](https://github.com/iodriller/Google-Image-Mining-and-PyTorch-CNN/blob/master/example_2.ipynb)__ - This is for google image search/download only. With just couple of lines, you can mine quite a bit images automatically.
 
 ### References
 
