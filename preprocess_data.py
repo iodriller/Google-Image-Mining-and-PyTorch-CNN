@@ -52,8 +52,11 @@ class preprocess_data():
                 loss = loss_function(outputs, batch_y)
                 loss.backward()
                 optimizer.step()  # Does the update
-
-            print(f"Epoch: {epoch}. Loss: {loss}")
+            try:
+                print(f"Epoch: {epoch}. Loss: {loss}")
+            except Exception as e:
+                print(e, "couldn't calculate the loss")
+                pass
 
         self.estimate_accuracy(test_X, test_y, net)
         return net
