@@ -4,13 +4,13 @@ This is a fun project that allows automatically downloading "scraping" google im
 
 ### Requirements
 
-Install the requirements by running the code below at the command window, at the project's directory:
+Install the requirements by running the code below at the command window, at the project's directory (if pytorch doesn't install, install from [pytorch](https://pytorch.org/)):
 
 	pip install -r requirements.txt
 
-For google image mining, install:
+For google image mining, install (pick a compatible version with your google chrome's version, see the notes):
 
-[chromedriver](http://chromedriver.storage.googleapis.com/index.html?path=2.9/)
+[chromedriver](http://chromedriver.storage.googleapis.com/index.html?path=83.0.4103.39/)
 
 At the examples given in jupyter notebooks, you need to replace <PATH> with the directory that you placed the "chromedriver.exe":
 
