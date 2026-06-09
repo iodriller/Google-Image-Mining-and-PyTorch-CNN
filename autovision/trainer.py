@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from typing import List, Tuple
 
 import torch
@@ -13,7 +12,8 @@ from torchvision import transforms
 from torchvision.datasets import ImageFolder
 from tqdm import tqdm
 
-from model import build_model
+from .config import TrainConfig
+from .model import build_model
 
 logger = logging.getLogger(__name__)
 
@@ -28,19 +28,6 @@ DEVICE = (
 # ImageNet normalisation — required by all pretrained torchvision backbones
 _MEAN = [0.485, 0.456, 0.406]
 _STD = [0.229, 0.224, 0.225]
-
-
-@dataclass
-class TrainConfig:
-    images_dir: str = "images"
-    model_path: str = "best_model.pt"
-    backbone: str = "efficientnet_b0"
-    freeze_backbone: bool = True
-    img_size: int = 224
-    epochs: int = 10
-    batch_size: int = 32
-    lr: float = 1e-3
-    val_split: float = 0.15
 
 
 def make_transforms(img_size: int, augment: bool) -> transforms.Compose:
@@ -64,9 +51,7 @@ def make_transforms(img_size: int, augment: bool) -> transforms.Compose:
     )
 
 
-def _build_loaders(
-    cfg: TrainConfig,
-) -> Tuple[DataLoader, DataLoader, List[str]]:
+def _build_loaders(cfg: TrainConfig) -> Tuple[DataLoader, DataLoader, List[str]]:
     # Two ImageFolder instances so train and val get different transforms
     train_ds = ImageFolder(cfg.images_dir, transform=make_transforms(cfg.img_size, augment=True))
     val_ds = ImageFolder(cfg.images_dir, transform=make_transforms(cfg.img_size, augment=False))
@@ -125,14 +110,12 @@ def _run_epoch(
 
 
 def train(cfg: TrainConfig) -> Tuple[nn.Module, List[str]]:
-    """Scrape → split → train → checkpoint. Returns (best_model, class_names)."""
+    """Train a classifier from images already on disk. Returns (best_model, class_names)."""
     print(f"Device: {DEVICE}")
 
     train_loader, val_loader, class_names = _build_loaders(cfg)
-    n_train = len(train_loader.dataset)
-    n_val = len(val_loader.dataset)
     print(f"Classes : {class_names}")
-    print(f"Train   : {n_train} images | Val: {n_val} images")
+    print(f"Train   : {len(train_loader.dataset)} images | Val: {len(val_loader.dataset)} images")
 
     model = build_model(len(class_names), cfg.backbone, cfg.freeze_backbone).to(DEVICE)
     optimizer = optim.AdamW(
@@ -164,11 +147,7 @@ def train(cfg: TrainConfig) -> Tuple[nn.Module, List[str]]:
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(
-                {
-                    "state_dict": model.state_dict(),
-                    "classes": class_names,
-                    "config": cfg,
-                },
+                {"state_dict": model.state_dict(), "classes": class_names, "config": cfg},
                 cfg.model_path,
             )
 
@@ -191,8 +170,9 @@ def predict(
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
 
-    transform = make_transforms(cfg.img_size, augment=False)
-    tensor = transform(PILImage.open(image_path).convert("RGB")).unsqueeze(0).to(DEVICE)
+    tensor = make_transforms(cfg.img_size, augment=False)(
+        PILImage.open(image_path).convert("RGB")
+    ).unsqueeze(0).to(DEVICE)
 
     with torch.no_grad():
         probs = torch.softmax(model(tensor), dim=1)[0]

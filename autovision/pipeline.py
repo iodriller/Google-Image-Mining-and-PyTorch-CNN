@@ -1,9 +1,8 @@
-"""
-End-to-end pipeline: scrape images → train a custom classifier.
+"""End-to-end pipeline: scrape images → train a custom classifier.
 
 Usage
 -----
-    from pipeline import run
+    from autovision import run
 
     model, classes = run(
         queries=["golden retriever", "siberian husky", "german shepherd"],
@@ -18,8 +17,9 @@ from typing import List, Tuple
 
 import torch.nn as nn
 
-from scraper import ImageScraper
-from trainer import TrainConfig, train
+from .config import TrainConfig
+from .scraper import ImageScraper
+from .trainer import train
 
 
 def run(

@@ -51,9 +51,9 @@ def train(
     skip_scrape: bool = typer.Option(False, "--skip-scrape", help="Skip download, train on existing images."),
 ):
     """Scrape images for each QUERY and train a custom image classifier."""
-    from scraper import ImageScraper
-    from trainer import TrainConfig
-    from trainer import train as run_train
+    from autovision.scraper import ImageScraper
+    from autovision.config import TrainConfig
+    from autovision.trainer import train as run_train
 
     console.rule("[bold blue]AutoVision — Train[/bold blue]")
     console.print(f"Categories : {queries}")
@@ -84,7 +84,7 @@ def predict(
     top_k: int = typer.Option(3, "--top-k", "-k", help="Number of top predictions to display."),
 ):
     """Classify an image using a trained model and show confidence scores."""
-    from trainer import predict as run_predict
+    from autovision.trainer import predict as run_predict
 
     if not Path(model_path).exists():
         console.print(f"[red]Model not found:[/red] {model_path}")
@@ -123,7 +123,7 @@ def scrape(
     images_dir: str = typer.Option("images", "--images-dir", help="Output directory."),
 ):
     """Download images from DuckDuckGo without training."""
-    from scraper import ImageScraper
+    from autovision.scraper import ImageScraper
 
     console.rule("[bold blue]AutoVision — Scrape[/bold blue]")
     scraper = ImageScraper(images_dir=images_dir)

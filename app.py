@@ -16,8 +16,9 @@ from pathlib import Path
 import gradio as gr
 import torch
 
-from model import build_model
-from trainer import DEVICE, TrainConfig, make_transforms
+from autovision.config import TrainConfig
+from autovision.model import build_model
+from autovision.trainer import DEVICE, make_transforms
 
 
 class _Classifier:
