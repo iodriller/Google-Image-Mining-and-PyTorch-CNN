@@ -43,7 +43,7 @@ class TrainConfig:
     val_split: float = 0.15
 
 
-def _make_transforms(img_size: int, augment: bool) -> transforms.Compose:
+def make_transforms(img_size: int, augment: bool) -> transforms.Compose:
     if augment:
         return transforms.Compose(
             [
@@ -68,8 +68,8 @@ def _build_loaders(
     cfg: TrainConfig,
 ) -> Tuple[DataLoader, DataLoader, List[str]]:
     # Two ImageFolder instances so train and val get different transforms
-    train_ds = ImageFolder(cfg.images_dir, transform=_make_transforms(cfg.img_size, augment=True))
-    val_ds = ImageFolder(cfg.images_dir, transform=_make_transforms(cfg.img_size, augment=False))
+    train_ds = ImageFolder(cfg.images_dir, transform=make_transforms(cfg.img_size, augment=True))
+    val_ds = ImageFolder(cfg.images_dir, transform=make_transforms(cfg.img_size, augment=False))
 
     n_val = max(1, int(len(train_ds) * cfg.val_split))
     indices = torch.randperm(len(train_ds)).tolist()
@@ -191,7 +191,7 @@ def predict(
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
 
-    transform = _make_transforms(cfg.img_size, augment=False)
+    transform = make_transforms(cfg.img_size, augment=False)
     tensor = transform(PILImage.open(image_path).convert("RGB")).unsqueeze(0).to(DEVICE)
 
     with torch.no_grad():
