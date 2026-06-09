@@ -7,6 +7,7 @@ from typing import List, Tuple
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from PIL import Image as PILImage
 from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
@@ -174,3 +175,28 @@ def train(cfg: TrainConfig) -> Tuple[nn.Module, List[str]]:
     print(f"\nTraining complete. Best val accuracy: {best_val_acc:.3f}")
     print(f"Model saved to: {cfg.model_path}")
     return model, class_names
+
+
+def predict(
+    image_path: str,
+    model_path: str = "best_model.pt",
+    top_k: int = 3,
+) -> List[Tuple[str, float]]:
+    """Load a saved checkpoint and return top-k (class, confidence) pairs."""
+    checkpoint = torch.load(model_path, map_location=DEVICE, weights_only=False)
+    class_names: List[str] = checkpoint["classes"]
+    cfg: TrainConfig = checkpoint["config"]
+
+    model = build_model(len(class_names), cfg.backbone, freeze=False).to(DEVICE)
+    model.load_state_dict(checkpoint["state_dict"])
+    model.eval()
+
+    transform = _make_transforms(cfg.img_size, augment=False)
+    tensor = transform(PILImage.open(image_path).convert("RGB")).unsqueeze(0).to(DEVICE)
+
+    with torch.no_grad():
+        probs = torch.softmax(model(tensor), dim=1)[0]
+
+    k = min(top_k, len(class_names))
+    topk_probs, topk_idx = probs.topk(k)
+    return [(class_names[i], float(p)) for i, p in zip(topk_idx.tolist(), topk_probs.tolist())]
