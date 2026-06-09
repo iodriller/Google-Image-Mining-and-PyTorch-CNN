@@ -1,147 +1,83 @@
-# AutoVision
-
-> **Train a custom image classifier in two commands — no dataset required.**
+# zero-label
 
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.x-ee4c2c.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.md)
 
-AutoVision turns plain search terms into a trained image classifier. Type what you want to classify, it scrapes images from the web, fine-tunes a pretrained EfficientNet-B0 on them, and hands you a model ready to use — from the command line or a Gradio web demo.
+Type what you want to classify. It handles the rest.
 
-No dataset curation. No labelling. No API keys.
+You give it a few search terms — `"golden retriever"`, `"siberian husky"`, whatever — and it goes off, grabs images from DuckDuckGo, fine-tunes a pretrained EfficientNet-B0 on them, and gives you back a working classifier. No dataset to curate, no images to label, no Selenium setup to fight with. Just a model that runs.
 
 ---
 
-## Quick start
+## Get started
 
 ```bash
-# Install
 pip install -e .
+```
 
+```bash
 # Train a dog-breed classifier
-# (~100 images per class, ~5 min on CPU or ~90 sec on GPU)
+# Grabs ~100 images per class, should take ~5 min on CPU or ~90 sec on GPU
 python cli.py train "golden retriever" "siberian husky" "german shepherd"
 
-# Classify any image
+# See what it thinks of a photo
 python cli.py predict photo.jpg
 
-# Open the interactive web demo → http://localhost:7860
+# Or open the browser UI and drag images in → http://localhost:7860
 python cli.py demo
 ```
 
----
-
-## How it works
-
-```
-Your search terms
-       │
-       ▼
-DuckDuckGo image search        no browser · no API key · no Selenium
-       │  ~100–200 images per class
-       ▼
-EfficientNet-B0                pretrained on ImageNet (torchvision)
-       │  backbone frozen · classifier head fine-tuned
-       ▼
-best_model.pt                  saved whenever val accuracy improves
-       │
-       ▼
-Gradio demo  /  CLI predict  /  Python API
-```
-
-### Under the hood
-
-| Setting | Value |
-|---------|-------|
-| Backbone | EfficientNet-B0 (ImageNet pretrained) |
-| Classifier head | `nn.Linear(1280, num_classes)` |
-| Loss | `CrossEntropyLoss` |
-| Optimizer | AdamW |
-| LR schedule | Cosine annealing |
-| Input size | 224 × 224 |
-| Augmentation | Random crop · horizontal flip · color jitter |
-| Device | Auto-detected: CUDA → MPS (Apple Silicon) → CPU |
-
-EfficientNet-B0 is a deliberate choice here — small enough to train on CPU in minutes, accurate enough to produce real classifiers from 50–150 images per class. Swap to `--backbone resnet18` if you want something even lighter.
+That's genuinely it for the basic case.
 
 ---
 
-## Installation
+## What's happening under the hood
 
-**CPU (any platform):**
-```bash
-pip install -e .
-```
+Images land in `images/<query_name>/`, split 85/15 for training and validation. The backbone (EfficientNet-B0 pretrained on ImageNet) stays frozen — those weights are already good at recognising edges, textures, shapes. Only the final classifier head gets trained, which is why it converges fast even on small datasets.
 
-**GPU (CUDA 11.8):**
-```bash
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-pip install -e .
-```
+Best checkpoint gets saved to `best_model.pt` whenever validation accuracy improves. Standard modern training setup: AdamW, cosine LR schedule, CrossEntropyLoss. If you want to fine-tune the whole network instead of just the head, pass `--no-freeze` — though you'll want 200+ images per class for that to help.
 
-Requires **Python 3.10+**.
+EfficientNet-B0 is a deliberate default. It's compact enough to train on CPU in a few minutes and accurate enough to produce classifiers that actually work with 50–150 images per class. Swap to `--backbone resnet18` if you want something even lighter.
 
 ---
 
-## CLI reference
+## CLI usage
 
-```
-python cli.py COMMAND [OPTIONS]
-```
-
-| Command | What it does |
-|---------|-------------|
-| `train QUERY...` | Scrape images and train a classifier |
-| `predict IMAGE` | Classify a single image, show confidence scores |
-| `scrape QUERY...` | Download images only — no training yet |
-| `demo` | Open the Gradio web UI |
-
-### `train`
+Rather than a table of every flag, here's a tour of what you'll actually use:
 
 ```bash
-python cli.py train "golden retriever" husky --n-images 150 --epochs 15
-```
+# The main workflow
+python cli.py train "cat" "dog"
+python cli.py train "cat" "dog" --n-images 150 --epochs 15
+python cli.py train "cat" "dog" --backbone resnet18
+python cli.py train "cat" "dog" --no-freeze        # fine-tune everything
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--n-images` | `100` | Images downloaded per category |
-| `--epochs` | `10` | Training epochs |
-| `--backbone` | `efficientnet_b0` | `efficientnet_b0` or `resnet18` |
-| `--freeze / --no-freeze` | freeze | Freeze backbone (transfer learning) |
-| `--batch-size` | `32` | Batch size |
-| `--lr` | `0.001` | Learning rate |
-| `--skip-scrape` | off | Train on images already in `images/` |
-| `--model-path` | `best_model.pt` | Where to save the checkpoint |
+# Already have images? Skip the download step
+python cli.py train "cat" "dog" --skip-scrape
 
-### `predict`
-
-```bash
+# Classify a single image — shows confidence bars in the terminal
+python cli.py predict photo.jpg
 python cli.py predict photo.jpg --top-k 5
+
+# Download images without training (useful for inspecting what you're working with)
+python cli.py scrape "tabby cat" "siamese cat" --n-images 80
+
+# Open the Gradio demo
+python cli.py demo
+python cli.py demo --share    # generates a public link you can share
+
+# Debugging slow or missing downloads
+python cli.py --verbose train "cat" "dog"
 ```
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--model-path` | `best_model.pt` | Checkpoint to load |
-| `--top-k` | `3` | How many top predictions to show |
-
-### `demo`
-
-```bash
-python cli.py demo --share   # generates a public link
-```
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--model-path` | `best_model.pt` | Checkpoint to load |
-| `--port` | `7860` | Local port |
-| `--share` | off | Generate a public Gradio link |
+Any command also accepts `--help` for the full options list.
 
 ---
 
 ## Python API
 
-Use it directly in a script or notebook — useful if you want to loop over
-experiments or integrate this into a larger pipeline.
+If you want to run this from a notebook or script, everything's importable:
 
 ```python
 from autovision import run
@@ -153,39 +89,36 @@ model, classes = run(
 )
 ```
 
-Or step by step, if you want more control:
+Or piece it together manually if you need more control:
 
 ```python
 from autovision.scraper import ImageScraper
 from autovision.config import Blueprint
 from autovision.trainer import train, predict
 
-scraper = ImageScraper(images_dir="images")
-scraper.search_and_download("cat", n_images=100)
-scraper.search_and_download("dog", n_images=100)
+ImageScraper().search_and_download("cat", n_images=100)
+ImageScraper().search_and_download("dog", n_images=100)
 
 model, classes = train(Blueprint(epochs=5, backbone="resnet18"))
-
 results = predict("photo.jpg", top_k=3)
 ```
 
 ---
 
-## Code map
+## What's inside
 
 ```
 autovision/
-├── __init__.py     Public API: run(), train(), predict(), Blueprint
-├── config.py       Blueprint — all hyperparameters in one dataclass
-├── scraper.py      DuckDuckGo image downloader (no Selenium)
-├── model.py        Pretrained backbone factory (EfficientNet-B0, ResNet-18)
-├── trainer.py      Training loop, data loading, checkpointing, inference
-└── pipeline.py     One-call entry point: scrape → train
-cli.py              Typer CLI (train / predict / scrape / demo)
-app.py              Gradio web demo
+├── config.py      Blueprint — one dataclass that holds all training settings
+├── scraper.py     DuckDuckGo image downloader, no browser required
+├── model.py       Pretrained backbone factory (EfficientNet-B0 or ResNet-18)
+├── trainer.py     Training loop, checkpointing, inference
+└── pipeline.py    One call: scrape + train
+cli.py             Command-line interface
+app.py             Gradio web demo
 notebooks/
-├── quickstart.ipynb          Fastest path to a working classifier
-└── custom_classifier.ipynb   Step-by-step with full control
+├── quickstart.ipynb           Fastest path to a working classifier
+└── custom_classifier.ipynb    Step-by-step with explanations
 ```
 
 ---
