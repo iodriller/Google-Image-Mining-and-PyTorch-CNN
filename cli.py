@@ -132,5 +132,23 @@ def scrape(
     console.print(f"\n[green]All images saved to [cyan]{images_dir}/[/cyan][/green]")
 
 
+@app.command()
+def demo(
+    model_path: str = typer.Option("best_model.pt", "--model-path", help="Path to best_model.pt."),
+    port: int = typer.Option(7860, "--port", help="Local port to serve the demo on."),
+    share: bool = typer.Option(False, "--share", help="Create a public Gradio share link."),
+):
+    """Launch the Gradio web demo in your browser."""
+    from app import build_demo
+
+    console.rule("[bold blue]AutoVision — Demo[/bold blue]")
+    console.print(f"Model  : [cyan]{model_path}[/cyan]")
+    console.print(f"URL    : [cyan]http://localhost:{port}[/cyan]")
+    if share:
+        console.print("[yellow]--share is on: a public link will be printed below.[/yellow]")
+
+    build_demo(model_path).launch(server_port=port, share=share)
+
+
 if __name__ == "__main__":
     app()
