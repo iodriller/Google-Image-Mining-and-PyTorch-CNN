@@ -22,6 +22,7 @@ Examples
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import List
 
@@ -29,12 +30,22 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+
 console = Console()
 app = typer.Typer(
     name="autovision",
     help="Zero-dataset image classifier — scrape images from the web, train, predict.",
     add_completion=False,
 )
+
+
+@app.callback()
+def _setup(
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show debug output (e.g. failed image downloads)."),
+) -> None:
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
 
 
 @app.command()
@@ -52,7 +63,7 @@ def train(
 ):
     """Scrape images for each QUERY and train a custom image classifier."""
     from autovision.scraper import ImageScraper
-    from autovision.config import TrainConfig
+    from autovision.config import Blueprint
     from autovision.trainer import train as run_train
 
     console.rule("[bold blue]AutoVision — Train[/bold blue]")
@@ -64,7 +75,7 @@ def train(
         for q in queries:
             scraper.search_and_download(q, n_images=n_images)
 
-    cfg = TrainConfig(
+    cfg = Blueprint(
         images_dir=images_dir,
         model_path=model_path,
         backbone=backbone,

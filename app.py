@@ -16,9 +16,9 @@ from pathlib import Path
 import gradio as gr
 import torch
 
-from autovision.config import TrainConfig
+from autovision.config import Blueprint
 from autovision.model import build_model
-from autovision.trainer import DEVICE, make_transforms
+from autovision.trainer import DEVICE, image_pipeline
 
 
 class _Classifier:
@@ -27,7 +27,7 @@ class _Classifier:
     def __init__(self) -> None:
         self.model = None
         self.class_names: list[str] = []
-        self.cfg: TrainConfig | None = None
+        self.cfg: Blueprint | None = None
 
     def load(self, model_path: str) -> bool:
         if not Path(model_path).exists():
@@ -45,7 +45,7 @@ class _Classifier:
     def classify(self, image) -> dict[str, float]:
         if self.model is None or image is None:
             return {}
-        transform = make_transforms(self.cfg.img_size, augment=False)
+        transform = image_pipeline(self.cfg.img_size, augment=False)
         tensor = transform(image.convert("RGB")).unsqueeze(0).to(DEVICE)
         with torch.no_grad():
             probs = torch.softmax(self.model(tensor), dim=1)[0]

@@ -17,7 +17,7 @@ from typing import List, Tuple
 
 import torch.nn as nn
 
-from .config import TrainConfig
+from .config import Blueprint
 from .scraper import ImageScraper
 from .trainer import train
 
@@ -36,7 +36,7 @@ def run(
     for query in queries:
         scraper.search_and_download(query, n_images=n_images)
 
-    cfg = TrainConfig(
+    cfg = Blueprint(
         images_dir=images_dir,
         epochs=epochs,
         batch_size=batch_size,
