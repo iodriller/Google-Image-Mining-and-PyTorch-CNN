@@ -1,7 +1,7 @@
 [project]
-name = "autovision"
+name = "zero-label"
 version = "0.2.0"
-description = "Zero-dataset image classifier — scrape images from the web, train a custom classifier"
+description = "Train a custom image classifier from search terms — no dataset, no labelling"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
