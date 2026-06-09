@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class TrainConfig:
+class Blueprint:
     images_dir: str = "images"
     model_path: str = "best_model.pt"
     backbone: str = "efficientnet_b0"

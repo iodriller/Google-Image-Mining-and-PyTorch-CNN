@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import List, Tuple
 
 import torch
@@ -12,7 +13,7 @@ from torchvision import transforms
 from torchvision.datasets import ImageFolder
 from tqdm import tqdm
 
-from .config import TrainConfig
+from .config import Blueprint
 from .model import build_model
 
 logger = logging.getLogger(__name__)
@@ -25,12 +26,15 @@ DEVICE = (
     else "cpu"
 )
 
+# Windows multiprocessing + CUDA can deadlock with workers > 0
+_NUM_WORKERS = 0 if os.name == "nt" else 2
+
 # ImageNet normalisation — required by all pretrained torchvision backbones
 _MEAN = [0.485, 0.456, 0.406]
 _STD = [0.229, 0.224, 0.225]
 
 
-def make_transforms(img_size: int, augment: bool) -> transforms.Compose:
+def image_pipeline(img_size: int, augment: bool) -> transforms.Compose:
     if augment:
         return transforms.Compose(
             [
@@ -51,10 +55,10 @@ def make_transforms(img_size: int, augment: bool) -> transforms.Compose:
     )
 
 
-def _build_loaders(cfg: TrainConfig) -> Tuple[DataLoader, DataLoader, List[str]]:
+def _partition_data(cfg: Blueprint) -> Tuple[DataLoader, DataLoader, List[str]]:
     # Two ImageFolder instances so train and val get different transforms
-    train_ds = ImageFolder(cfg.images_dir, transform=make_transforms(cfg.img_size, augment=True))
-    val_ds = ImageFolder(cfg.images_dir, transform=make_transforms(cfg.img_size, augment=False))
+    train_ds = ImageFolder(cfg.images_dir, transform=image_pipeline(cfg.img_size, augment=True))
+    val_ds = ImageFolder(cfg.images_dir, transform=image_pipeline(cfg.img_size, augment=False))
 
     n_val = max(1, int(len(train_ds) * cfg.val_split))
     indices = torch.randperm(len(train_ds)).tolist()
@@ -63,14 +67,14 @@ def _build_loaders(cfg: TrainConfig) -> Tuple[DataLoader, DataLoader, List[str]]
         Subset(train_ds, indices[n_val:]),
         batch_size=cfg.batch_size,
         shuffle=True,
-        num_workers=2,
+        num_workers=_NUM_WORKERS,
         pin_memory=True,
     )
     val_loader = DataLoader(
         Subset(val_ds, indices[:n_val]),
         batch_size=cfg.batch_size,
         shuffle=False,
-        num_workers=2,
+        num_workers=_NUM_WORKERS,
         pin_memory=True,
     )
     return train_loader, val_loader, train_ds.classes
@@ -109,11 +113,11 @@ def _run_epoch(
     return total_loss / total, correct / total
 
 
-def train(cfg: TrainConfig) -> Tuple[nn.Module, List[str]]:
+def train(cfg: Blueprint) -> Tuple[nn.Module, List[str]]:
     """Train a classifier from images already on disk. Returns (best_model, class_names)."""
     print(f"Device: {DEVICE}")
 
-    train_loader, val_loader, class_names = _build_loaders(cfg)
+    train_loader, val_loader, class_names = _partition_data(cfg)
     print(f"Classes : {class_names}")
     print(f"Train   : {len(train_loader.dataset)} images | Val: {len(val_loader.dataset)} images")
 
@@ -164,13 +168,13 @@ def predict(
     """Load a saved checkpoint and return top-k (class, confidence) pairs."""
     checkpoint = torch.load(model_path, map_location=DEVICE, weights_only=False)
     class_names: List[str] = checkpoint["classes"]
-    cfg: TrainConfig = checkpoint["config"]
+    cfg: Blueprint = checkpoint["config"]
 
     model = build_model(len(class_names), cfg.backbone, freeze=False).to(DEVICE)
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
 
-    tensor = make_transforms(cfg.img_size, augment=False)(
+    tensor = image_pipeline(cfg.img_size, augment=False)(
         PILImage.open(image_path).convert("RGB")
     ).unsqueeze(0).to(DEVICE)
 

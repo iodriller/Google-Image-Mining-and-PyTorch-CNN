@@ -157,14 +157,14 @@ Or step by step, if you want more control:
 
 ```python
 from autovision.scraper import ImageScraper
-from autovision.config import TrainConfig
+from autovision.config import Blueprint
 from autovision.trainer import train, predict
 
 scraper = ImageScraper(images_dir="images")
 scraper.search_and_download("cat", n_images=100)
 scraper.search_and_download("dog", n_images=100)
 
-model, classes = train(TrainConfig(epochs=5, backbone="resnet18"))
+model, classes = train(Blueprint(epochs=5, backbone="resnet18"))
 
 results = predict("photo.jpg", top_k=3)
 ```
@@ -175,8 +175,8 @@ results = predict("photo.jpg", top_k=3)
 
 ```
 autovision/
-├── __init__.py     Public API: run(), train(), predict(), TrainConfig
-├── config.py       TrainConfig — all hyperparameters in one dataclass
+├── __init__.py     Public API: run(), train(), predict(), Blueprint
+├── config.py       Blueprint — all hyperparameters in one dataclass
 ├── scraper.py      DuckDuckGo image downloader (no Selenium)
 ├── model.py        Pretrained backbone factory (EfficientNet-B0, ResNet-18)
 ├── trainer.py      Training loop, data loading, checkpointing, inference
