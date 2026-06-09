@@ -28,6 +28,9 @@ notebook = [
 [project.scripts]
 autovision = "cli:app"
 
+[tool.setuptools.packages.find]
+include = ["autovision*"]
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
