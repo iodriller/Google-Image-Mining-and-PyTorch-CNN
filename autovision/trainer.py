@@ -68,14 +68,14 @@ def _partition_data(cfg: Blueprint) -> Tuple[DataLoader, DataLoader, List[str]]:
         batch_size=cfg.batch_size,
         shuffle=True,
         num_workers=_NUM_WORKERS,
-        pin_memory=True,
+        pin_memory=torch.cuda.is_available(),
     )
     val_loader = DataLoader(
         Subset(val_ds, indices[:n_val]),
         batch_size=cfg.batch_size,
         shuffle=False,
         num_workers=_NUM_WORKERS,
-        pin_memory=True,
+        pin_memory=torch.cuda.is_available(),
     )
     return train_loader, val_loader, train_ds.classes
 
@@ -128,7 +128,9 @@ def train(cfg: Blueprint) -> Tuple[nn.Module, List[str]]:
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=cfg.epochs)
     criterion = nn.CrossEntropyLoss()
 
-    best_val_acc = 0.0
+    # Always persist the first completed epoch. A tiny or difficult validation
+    # split can score 0.0, which is still a valid trained checkpoint.
+    best_val_acc = -1.0
 
     for epoch in range(1, cfg.epochs + 1):
         train_loss, train_acc = _run_epoch(

@@ -1,6 +1,5 @@
 import pytest
 from PIL import Image
-from pathlib import Path
 
 
 @pytest.fixture(scope="session")

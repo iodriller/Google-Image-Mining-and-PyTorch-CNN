@@ -26,6 +26,7 @@ notebook = [
 ]
 dev = [
     "pytest>=7.0",
+    "ruff>=0.16",
 ]
 
 [project.scripts]
@@ -36,6 +37,22 @@ include = ["autovision*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
 
 [build-system]
 requires = ["setuptools>=68"]
