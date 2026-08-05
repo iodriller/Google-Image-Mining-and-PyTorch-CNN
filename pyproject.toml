@@ -16,7 +16,7 @@ dependencies = [
     "numpy>=1.26",
     "typer>=0.12",
     "rich>=13.0",
-    "gradio>=4.0",
+    "gradio>=6.22.0",
 ]
 
 [project.optional-dependencies]
@@ -26,7 +26,7 @@ notebook = [
 ]
 dev = [
     "pytest>=7.0",
-    "ruff>=0.16",
+    "ruff>=0.16.1",
 ]
 
 [project.scripts]
