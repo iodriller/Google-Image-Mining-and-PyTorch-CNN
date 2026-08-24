@@ -13,6 +13,12 @@ You give it a few search terms — `"golden retriever"`, `"siberian husky"`, wha
 ## Get started
 
 ```bash
+pip install zero-label
+```
+
+Or for local development:
+
+```bash
 pip install -e .
 ```
 

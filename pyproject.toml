@@ -5,6 +5,7 @@ description = "Train a custom image classifier from search terms — no dataset,
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
+authors = [{ name = "Oney Erge", email = "48371335+oney-erge@users.noreply.github.com" }]
 
 dependencies = [
     "torch>=2.0",
@@ -18,6 +19,11 @@ dependencies = [
     "rich>=13.0",
     "gradio>=4.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/oney-erge/image-classifier-web-search"
+Repository = "https://github.com/oney-erge/image-classifier-web-search"
+Issues = "https://github.com/oney-erge/image-classifier-web-search/issues"
 
 [project.optional-dependencies]
 notebook = [
@@ -34,6 +40,9 @@ autovision = "cli:app"
 
 [tool.setuptools.packages.find]
 include = ["autovision*"]
+
+[tool.setuptools]
+py-modules = ["cli", "app"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
